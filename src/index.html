@@ -1,0 +1,885 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>如昊AI交易软件 - 飞狐风格</title>
+    
+    <!-- KLineChart v10.0 -->
+    <script src="https://cdn.jsdelivr.net/npm/klinecharts@10.0.0/dist/umd/klinecharts.min.js"></script>
+    
+    <style>
+        /* ==================== 全局重置 ==================== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        /* ==================== 窗口基础 ==================== */
+        body {
+            font-family: "Microsoft YaHei", "微软雅黑", sans-serif;
+            background: #2D2D2D;
+            color: #FFFFFF;
+            overflow: hidden;
+            height: 100vh;
+            width: 100vw;
+        }
+
+        /* ==================== 标题栏 ==================== */
+        .title-bar {
+            height: 30px;
+            background: linear-gradient(to right, #2D2D2D, #3D3D3D);
+            display: flex;
+            align-items: center;
+            padding: 0 8px;
+            border-bottom: 1px solid #1A1A1A;
+            user-select: none;
+            -webkit-app-region: drag;
+        }
+
+        .title-icon {
+            width: 16px;
+            height: 16px;
+            margin-right: 8px;
+            background: #FF6B35;
+            border-radius: 2px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            color: white;
+        }
+
+        .title-text {
+            font-size: 12px;
+            color: #FFFFFF;
+            flex: 1;
+        }
+
+        .window-controls {
+            display: flex;
+            gap: 0;
+            -webkit-app-region: no-drag;
+        }
+
+        .window-btn {
+            width: 30px;
+            height: 30px;
+            border: none;
+            background: transparent;
+            color: #FFFFFF;
+            font-size: 14px;
+            cursor: pointer;
+            transition: background 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .window-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .window-btn.close:hover {
+            background: #E81123;
+        }
+
+        /* ==================== 菜单栏 ==================== */
+        .menu-bar {
+            height: 24px;
+            background: #F5F5F5;
+            display: flex;
+            align-items: center;
+            padding: 0 4px;
+            border-bottom: 1px solid #CCCCCC;
+        }
+
+        .menu-item {
+            padding: 0 12px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            font-size: 11px;
+            color: #000000;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .menu-item:hover {
+            background: #E5E5E5;
+        }
+
+        /* ==================== 工具栏 ==================== */
+        .toolbar {
+            height: 28px;
+            background: #E8E8E8;
+            display: flex;
+            align-items: center;
+            padding: 0 4px;
+            gap: 4px;
+            border-bottom: 1px solid #CCCCCC;
+        }
+
+        .toolbar-btn {
+            height: 22px;
+            padding: 0 8px;
+            background: linear-gradient(to bottom, #FFFFFF, #E0E0E0);
+            border: 1px solid #AAAAAA;
+            border-radius: 2px;
+            font-size: 10px;
+            color: #333333;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .toolbar-btn:hover {
+            background: linear-gradient(to bottom, #F0F0F0, #D0D0D0);
+        }
+
+        .toolbar-btn.active {
+            background: linear-gradient(to bottom, #D0D0D0, #B0B0B0);
+            border-color: #888888;
+        }
+
+        .toolbar-separator {
+            width: 1px;
+            height: 20px;
+            background: #CCCCCC;
+            margin: 0 4px;
+        }
+
+        /* ==================== 主内容区 ==================== */
+        .main-container {
+            display: flex;
+            flex: 1;
+            height: calc(100vh - 30px - 24px - 28px - 22px);
+            overflow: hidden;
+        }
+
+        /* ==================== 左侧面板 - 股票列表 ==================== */
+        .left-panel {
+            width: 200px;
+            min-width: 150px;
+            max-width: 300px;
+            background: #F5F5F5;
+            border-right: 2px solid #CCCCCC;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .panel-header {
+            height: 24px;
+            background: linear-gradient(to bottom, #E8E8E8, #D0D0D0);
+            display: flex;
+            align-items: center;
+            padding: 0 8px;
+            font-size: 11px;
+            color: #333333;
+            border-bottom: 1px solid #BBBBBB;
+        }
+
+        .stock-list-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .stock-list-header {
+            height: 24px;
+            background: #E0E0E0;
+            display: flex;
+            align-items: center;
+            font-size: 10px;
+            color: #333333;
+            border-bottom: 1px solid #CCCCCC;
+        }
+
+        .header-cell {
+            padding: 0 4px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 2px;
+        }
+
+        .header-cell:hover {
+            background: #D0D0D0;
+        }
+
+        .code-col { width: 60px; }
+        .name-col { width: 70px; }
+        .price-col { width: 50px; text-align: right; }
+        .change-col { width: 60px; text-align: right; }
+
+        .stock-list-content {
+            flex: 1;
+            overflow-y: auto;
+            font-size: 11px;
+        }
+
+        .stock-row {
+            height: 22px;
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            border-bottom: 1px solid #EEEEEE;
+        }
+
+        .stock-row:hover {
+            background: #E8E8E8;
+        }
+
+        .stock-row.selected {
+            background: #1976D2;
+            color: white;
+        }
+
+        .stock-row.selected .up,
+        .stock-row.selected .down {
+            color: white;
+        }
+
+        .stock-row .cell {
+            padding: 0 4px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .up { color: #FF0000; }
+        .down { color: #008000; }
+        .flat { color: #333333; }
+
+        /* ==================== 中间面板 - K线图表区 ==================== */
+        .center-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: #000000;
+            min-width: 400px;
+        }
+
+        .kline-main {
+            flex: 3;
+            background: #000000;
+            border-bottom: 1px solid #333333;
+            position: relative;
+        }
+
+        .indicator-panel {
+            flex: 1;
+            background: #000000;
+            border-bottom: 1px solid #333333;
+            position: relative;
+        }
+
+        .indicator-panel:last-child {
+            border-bottom: none;
+        }
+
+        .panel-label {
+            position: absolute;
+            top: 2px;
+            left: 4px;
+            font-size: 10px;
+            color: #666666;
+            z-index: 10;
+        }
+
+        /* ==================== 右侧面板 - 信息面板 ==================== */
+        .right-panel {
+            width: 180px;
+            min-width: 150px;
+            max-width: 250px;
+            background: #E8E8E8;
+            border-left: 2px solid #CCCCCC;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .info-section {
+            padding: 8px;
+            border-bottom: 1px solid #CCCCCC;
+        }
+
+        .info-title {
+            font-size: 11px;
+            color: #666666;
+            margin-bottom: 4px;
+        }
+
+        .info-value {
+            font-size: 14px;
+            color: #333333;
+            font-weight: bold;
+        }
+
+        .bid-ask-table {
+            width: 100%;
+            font-size: 10px;
+            border-collapse: collapse;
+        }
+
+        .bid-ask-table td {
+            padding: 2px 4px;
+            text-align: right;
+        }
+
+        .bid-ask-table .bid { color: #008000; }
+        .bid-ask-table .ask { color: #FF0000; }
+
+        /* ==================== 状态栏 ==================== */
+        .status-bar {
+            height: 22px;
+            background: #404040;
+            display: flex;
+            align-items: center;
+            padding: 0 8px;
+            font-size: 11px;
+            color: #CCCCCC;
+            border-top: 1px solid #555555;
+        }
+
+        .status-item {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            padding: 0 8px;
+            border-right: 1px solid #555555;
+        }
+
+        .status-item:last-child {
+            border-right: none;
+            margin-left: auto;
+        }
+
+        .status-indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #00C800;
+        }
+
+        /* ==================== 应用容器 ==================== */
+        .app-container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            width: 100vw;
+        }
+
+        /* ==================== 周期选择器 ==================== */
+        .period-selector {
+            display: flex;
+            gap: 2px;
+        }
+
+        .period-btn {
+            padding: 2px 6px;
+            font-size: 10px;
+            background: #FFFFFF;
+            border: 1px solid #AAAAAA;
+            border-radius: 2px;
+            cursor: pointer;
+        }
+
+        .period-btn.active {
+            background: #1976D2;
+            color: white;
+            border-color: #1976D2;
+        }
+
+        /* ==================== 指标选择器 ==================== */
+        .indicator-selector {
+            display: flex;
+            gap: 2px;
+        }
+
+        .indicator-btn {
+            padding: 2px 6px;
+            font-size: 10px;
+            background: #FFFFFF;
+            border: 1px solid #AAAAAA;
+            border-radius: 2px;
+            cursor: pointer;
+        }
+
+        .indicator-btn.active {
+            background: #FF8000;
+            color: white;
+            border-color: #FF8000;
+        }
+
+        /* ==================== 滚动条样式 ==================== */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #F0F0F0;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #C0C0C0;
+            border-radius: 3px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #A0A0A0;
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- 标题栏 -->
+        <div class="title-bar">
+            <div class="title-icon">🦊</div>
+            <div class="title-text" id="window-title">如昊AI交易软件 - [上证指数 sh000001]</div>
+            <div class="window-controls">
+                <button class="window-btn" onclick="minimizeWindow()">−</button>
+                <button class="window-btn" onclick="maximizeWindow()">□</button>
+                <button class="window-btn close" onclick="closeWindow()">×</button>
+            </div>
+        </div>
+
+        <!-- 菜单栏 -->
+        <div class="menu-bar">
+            <div class="menu-item" onclick="openMenu('file')">文件</div>
+            <div class="menu-item" onclick="openMenu('view')">查看</div>
+            <div class="menu-item" onclick="openMenu('analysis')">分析</div>
+            <div class="menu-item" onclick="openMenu('tools')">工具</div>
+            <div class="menu-item" onclick="openMenu('help')">帮助</div>
+        </div>
+
+        <!-- 工具栏 -->
+        <div class="toolbar">
+            <div class="period-selector">
+                <button class="period-btn" data-period="1min" onclick="switchPeriod('1min')">1分</button>
+                <button class="period-btn" data-period="5min" onclick="switchPeriod('5min')">5分</button>
+                <button class="period-btn" data-period="15min" onclick="switchPeriod('15min')">15分</button>
+                <button class="period-btn" data-period="30min" onclick="switchPeriod('30min')">30分</button>
+                <button class="period-btn" data-period="60min" onclick="switchPeriod('60min')">60分</button>
+                <button class="period-btn active" data-period="day" onclick="switchPeriod('day')">日线</button>
+                <button class="period-btn" data-period="week" onclick="switchPeriod('week')">周线</button>
+                <button class="period-btn" data-period="month" onclick="switchPeriod('month')">月线</button>
+            </div>
+            <div class="toolbar-separator"></div>
+            <div class="indicator-selector">
+                <button class="indicator-btn active" onclick="switchMainIndicator('MA')">MA</button>
+                <button class="indicator-btn" onclick="switchMainIndicator('BOLL')">BOLL</button>
+            </div>
+            <div class="toolbar-separator"></div>
+            <button class="toolbar-btn" onclick="refreshData()">🔄 刷新</button>
+            <button class="toolbar-btn" onclick="toggleFavorite()">⭐ 自选</button>
+        </div>
+
+        <!-- 主内容区 -->
+        <div class="main-container">
+            <!-- 左侧面板 - 股票列表 -->
+            <div class="left-panel">
+                <div class="panel-header">股票列表</div>
+                <div class="stock-list-container">
+                    <div class="stock-list-header">
+                        <div class="header-cell code-col" onclick="sortStocks('code')">代码</div>
+                        <div class="header-cell name-col" onclick="sortStocks('name')">名称</div>
+                        <div class="header-cell price-col" onclick="sortStocks('price')">价格</div>
+                        <div class="header-cell change-col" onclick="sortStocks('changePercent')">涨幅</div>
+                    </div>
+                    <div class="stock-list-content" id="stock-list">
+                        <!-- 股票列表动态生成 -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- 中间面板 - K线图表区 -->
+            <div class="center-panel">
+                <div class="kline-main" id="kline-chart">
+                    <!-- K线主图 -->
+                </div>
+                <div class="indicator-panel" id="indicator-1">
+                    <div class="panel-label">VOL</div>
+                    <!-- 成交量指标 -->
+                </div>
+                <div class="indicator-panel" id="indicator-2">
+                    <div class="panel-label">MACD</div>
+                    <!-- MACD指标 -->
+                </div>
+            </div>
+
+            <!-- 右侧面板 - 信息面板 -->
+            <div class="right-panel">
+                <div class="panel-header">股票信息</div>
+                <div class="info-section">
+                    <div class="info-title">股票名称</div>
+                    <div class="info-value" id="stock-name">--</div>
+                </div>
+                <div class="info-section">
+                    <div class="info-title">当前价格</div>
+                    <div class="info-value" id="stock-price">--</div>
+                </div>
+                <div class="info-section">
+                    <div class="info-title">涨跌幅</div>
+                    <div class="info-value" id="stock-change">--</div>
+                </div>
+                <div class="info-section">
+                    <div class="info-title">买卖盘</div>
+                    <table class="bid-ask-table">
+                        <tr><td class="ask">卖5</td><td>--</td><td>--</td></tr>
+                        <tr><td class="ask">卖4</td><td>--</td><td>--</td></tr>
+                        <tr><td class="ask">卖3</td><td>--</td><td>--</td></tr>
+                        <tr><td class="ask">卖2</td><td>--</td><td>--</td></tr>
+                        <tr><td class="ask">卖1</td><td>--</td><td>--</td></tr>
+                        <tr><td class="bid">买1</td><td>--</td><td>--</td></tr>
+                        <tr><td class="bid">买2</td><td>--</td><td>--</td></tr>
+                        <tr><td class="bid">买3</td><td>--</td><td>--</td></tr>
+                        <tr><td class="bid">买4</td><td>--</td><td>--</td></tr>
+                        <tr><td class="bid">买5</td><td>--</td><td>--</td></tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- 状态栏 -->
+        <div class="status-bar">
+            <div class="status-item">
+                <span class="status-indicator"></span>
+                <span>就绪</span>
+            </div>
+            <div class="status-item">
+                <span>连接状态: 已连接</span>
+            </div>
+            <div class="status-item">
+                <span>数据源: 腾讯财经</span>
+            </div>
+            <div class="status-item">
+                <span id="current-time">--</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ==================== 全局状态 ====================
+        let currentSymbol = 'sh000001';
+        let currentPeriod = 'day';
+        let klineChart = null;
+        let stocks = [];
+        let selectedStock = null;
+        let updateTimer = null;
+
+        // 预设股票池
+        const presetStocks = [
+            { code: 'sh000001', name: '上证指数', pinyin: 'SZZS' },
+            { code: 'sz399001', name: '深证成指', pinyin: 'SZCZ' },
+            { code: 'sh600519', name: '贵州茅台', pinyin: 'MTRT' },
+            { code: 'sz000001', name: '平安银行', pinyin: 'PAYH' },
+            { code: 'sz000858', name: '五粮液', pinyin: 'WLY' },
+            { code: 'sz002594', name: '比亚迪', pinyin: 'BYD' },
+            { code: 'sz300750', name: '宁德时代', pinyin: 'NDSD' },
+            { code: 'sh600036', name: '招商银行', pinyin: 'ZSYH' }
+        ];
+
+        // ==================== 初始化 ====================
+        document.addEventListener('DOMContentLoaded', function() {
+            initStockList();
+            initKlineChart();
+            startAutoUpdate();
+            updateTime();
+            setInterval(updateTime, 1000);
+        });
+
+        // ==================== 股票列表 ====================
+        function initStockList() {
+            stocks = presetStocks.map(s => ({
+                ...s,
+                price: 0,
+                prevClose: 0,
+                change: 0,
+                changePercent: 0
+            }));
+            renderStockList();
+            fetchStockData();
+        }
+
+        function renderStockList() {
+            const container = document.getElementById('stock-list');
+            container.innerHTML = '';
+            
+            stocks.forEach((stock, index) => {
+                const row = document.createElement('div');
+                row.className = 'stock-row' + (selectedStock === stock.code ? ' selected' : '');
+                row.onclick = () => selectStock(stock.code);
+                
+                const changeClass = stock.changePercent > 0 ? 'up' : (stock.changePercent < 0 ? 'down' : 'flat');
+                const changeSign = stock.changePercent > 0 ? '+' : '';
+                
+                row.innerHTML = `
+                    <div class="cell code-col">${stock.code}</div>
+                    <div class="cell name-col">${stock.name}</div>
+                    <div class="cell price-col ${changeClass}">${stock.price.toFixed(2)}</div>
+                    <div class="cell change-col ${changeClass}">${changeSign}${stock.changePercent.toFixed(2)}%</div>
+                `;
+                
+                container.appendChild(row);
+            });
+        }
+
+        function selectStock(code) {
+            selectedStock = code;
+            currentSymbol = code;
+            renderStockList();
+            updateStockInfo();
+            loadKlineData();
+            
+            const stock = stocks.find(s => s.code === code);
+            if (stock) {
+                document.getElementById('window-title').textContent = `如昊AI交易软件 - [${stock.name} ${code}]`;
+            }
+        }
+
+        function sortStocks(field) {
+            stocks.sort((a, b) => {
+                if (field === 'code' || field === 'name') {
+                    return a[field].localeCompare(b[field]);
+                }
+                return b[field] - a[field];
+            });
+            renderStockList();
+        }
+
+        // ==================== 行情数据 ====================
+        function fetchStockData() {
+            const codes = stocks.map(s => s.code).join(',');
+            const url = `https://qt.gtimg.cn/q=${codes}`;
+            
+            const script = document.createElement('script');
+            script.src = url;
+            script.onload = () => {
+                parseStockData();
+                document.head.removeChild(script);
+            };
+            script.onerror = () => {
+                document.head.removeChild(script);
+            };
+            document.head.appendChild(script);
+        }
+
+        function parseStockData() {
+            stocks.forEach(stock => {
+                const varName = `v_${stock.code}`;
+                if (window[varName]) {
+                    const data = window[varName].split('~');
+                    if (data.length > 3) {
+                        stock.name = data[1] || stock.name;
+                        stock.price = parseFloat(data[3]) || 0;
+                        stock.prevClose = parseFloat(data[4]) || 0;
+                        
+                        if (stock.prevClose > 0) {
+                            stock.change = stock.price - stock.prevClose;
+                            stock.changePercent = (stock.change / stock.prevClose) * 100;
+                        }
+                    }
+                }
+            });
+            
+            renderStockList();
+            if (selectedStock) {
+                updateStockInfo();
+            }
+        }
+
+        function updateStockInfo() {
+            const stock = stocks.find(s => s.code === selectedStock);
+            if (!stock) return;
+            
+            document.getElementById('stock-name').textContent = stock.name;
+            document.getElementById('stock-price').textContent = stock.price.toFixed(2);
+            
+            const changeSign = stock.changePercent > 0 ? '+' : '';
+            document.getElementById('stock-change').textContent = 
+                `${changeSign}${stock.changePercent.toFixed(2)}% (${changeSign}${stock.change.toFixed(2)})`;
+            
+            const changeElement = document.getElementById('stock-change');
+            changeElement.style.color = stock.changePercent > 0 ? '#FF0000' : (stock.changePercent < 0 ? '#008000' : '#333333');
+        }
+
+        // ==================== K线图表 ====================
+        function initKlineChart() {
+            klineChart = klinecharts.init('kline-chart', {
+                locale: 'zh-CN',
+                styles: {
+                    grid: {
+                        show: true,
+                        horizontal: { style: 'dashed', color: '#333333', size: 1 },
+                        vertical: { style: 'dashed', color: '#333333', size: 1 }
+                    },
+                    candle: {
+                        upColor: '#FF0000',
+                        downColor: '#00C800',
+                        upBorderColor: '#FF0000',
+                        downBorderColor: '#00C800'
+                    },
+                    xAxis: {
+                        show: true,
+                        color: '#666666',
+                        fontSize: 10
+                    },
+                    yAxis: {
+                        show: true,
+                        position: 'right',
+                        color: '#666666',
+                        fontSize: 10
+                    },
+                    background: { color: '#000000' },
+                    crosshair: {
+                        show: true,
+                        horizontal: { color: '#FFFF00', style: 'dashed' },
+                        vertical: { color: '#FFFF00', style: 'dashed' }
+                    }
+                }
+            });
+            
+            // 添加MA指标
+            klineChart.createIndicator('MA', false, {
+                calcParams: [5, 10, 20, 30, 60],
+                styles: {
+                    lines: [
+                        { color: '#FFFFFF', lineWidth: 1 },
+                        { color: '#FFFF00', lineWidth: 1 },
+                        { color: '#FF00FF', lineWidth: 1 },
+                        { color: '#00FFFF', lineWidth: 1 },
+                        { color: '#FF8000', lineWidth: 1 }
+                    ]
+                }
+            });
+            
+            loadKlineData();
+        }
+
+        function loadKlineData() {
+            // 生成模拟K线数据
+            const data = generateMockKlineData(100);
+            klineChart.applyNewData(data);
+        }
+
+        function generateMockKlineData(count) {
+            const data = [];
+            let price = 3000;
+            const now = new Date();
+            
+            for (let i = count; i > 0; i--) {
+                const date = new Date(now.getTime() - i * 24 * 60 * 60 * 1000);
+                const change = (Math.random() - 0.5) * 50;
+                const open = price;
+                const close = price + change;
+                const high = Math.max(open, close) + Math.random() * 20;
+                const low = Math.min(open, close) - Math.random() * 20;
+                const volume = Math.floor(Math.random() * 1000000) + 500000;
+                
+                data.push({
+                    timestamp: date.getTime(),
+                    open: open,
+                    high: high,
+                    low: low,
+                    close: close,
+                    volume: volume
+                });
+                
+                price = close;
+            }
+            
+            return data;
+        }
+
+        // ==================== 周期切换 ====================
+        function switchPeriod(period) {
+            currentPeriod = period;
+            
+            document.querySelectorAll('.period-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.querySelector(`[data-period="${period}"]`).classList.add('active');
+            
+            loadKlineData();
+        }
+
+        function switchMainIndicator(indicator) {
+            document.querySelectorAll('.indicator-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            // 切换主图指标
+            console.log('切换指标:', indicator);
+        }
+
+        // ==================== 工具栏功能 ====================
+        function refreshData() {
+            fetchStockData();
+            loadKlineData();
+        }
+
+        function toggleFavorite() {
+            console.log('切换自选股');
+        }
+
+        // ==================== 菜单功能 ====================
+        function openMenu(menu) {
+            console.log('打开菜单:', menu);
+        }
+
+        // ==================== 窗口控制 ====================
+        function minimizeWindow() {
+            // Tauri API调用
+            if (window.__TAURI__) {
+                window.__TAURI__.window.getCurrent().minimize();
+            }
+        }
+
+        function maximizeWindow() {
+            // Tauri API调用
+            if (window.__TAURI__) {
+                window.__TAURI__.window.getCurrent().toggleMaximize();
+            }
+        }
+
+        function closeWindow() {
+            // Tauri API调用
+            if (window.__TAURI__) {
+                window.__TAURI__.window.getCurrent().close();
+            }
+        }
+
+        // ==================== 自动更新 ====================
+        function startAutoUpdate() {
+            updateTimer = setInterval(() => {
+                fetchStockData();
+            }, 3000);
+        }
+
+        function updateTime() {
+            const now = new Date();
+            document.getElementById('current-time').textContent = 
+                now.toLocaleString('zh-CN', {
+                    year: 'numeric',
+                    month: '2-digit',
+                    day: '2-digit',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit'
+                });
+        }
+
+        // ==================== 窗口大小调整 ====================
+        window.addEventListener('resize', () => {
+            if (klineChart) {
+                klineChart.resize();
+            }
+        });
+    </script>
+</body>
+</html>
